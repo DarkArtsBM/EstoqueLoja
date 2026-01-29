@@ -42,6 +42,26 @@ public class ProdutoController {
         return ResponseEntity.ok(response);
     }
 
+    @PutMapping("/{id}/reposicao")
+    public ResponseEntity<ProdutoResponseDTO> reposicao(@PathVariable Long id,@RequestBody Integer quantidade) {
+        ProdutoResponseDTO  response = service.adicionarEstoque(id, quantidade);
+        return ResponseEntity.ok(response);
+    }
+
+    // PATCH localhost:8080/produtos/1/preco
+    @PatchMapping("/{id}/preco")
+    public ResponseEntity<ProdutoResponseDTO> atualizarPreco(@PathVariable Long id, @RequestBody Double preco) {
+        return ResponseEntity.ok(service.attPreco(id, preco));
+    }
+
+    // PATCH localhost:8080/produtos/1/nome
+    // No Body envie apenas o texto (ex: "Novo Mouse")
+    @PatchMapping("/{id}/nome")
+    public ResponseEntity<ProdutoResponseDTO> atualizarNome(@PathVariable Long id, @RequestBody String nome) {
+        return ResponseEntity.ok(service.attNome(id, nome));
+    }
+
+
     @GetMapping // A URL será apenas: localhost:8080/produtos
     public ResponseEntity<List<ProdutoResponseDTO>> listar() {
 

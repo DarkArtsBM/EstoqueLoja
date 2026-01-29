@@ -22,6 +22,11 @@ public class ProdutoService {
 
     @Transactional // 12
     public ProdutoResponseDTO salvarProduto(ProdutoRequestDTO dto) {
+
+        if (repository.findByNome(dto.nome()).isPresent()) {
+            throw new RuntimeException("Já existe um produto com o nome: " + dto.nome());
+        }
+
         Produto produto = new Produto();
         produto.setNome(dto.nome());
         produto.setQuantidade(dto.quantidade());
@@ -92,6 +97,72 @@ public class ProdutoService {
                 produto.getPreco(),
                 produto.calcularValorTotalEstoque()
         );
+    }
+
+    @Transactional
+    public ProdutoResponseDTO adicionarEstoque(Long id, Integer quantidade) {
+        Produto produto = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado ID: " + id));
+
+        int novaQuantidade = produto.getQuantidade() + quantidade;
+        produto.setQuantidade(novaQuantidade);
+        repository.save(produto);
+
+        rabbitTemplate.convertAndSend("estoque.ex", "estoque.rk",
+                "Reposição de estoque: " + produto.getNome() + ". Total atual: " + novaQuantidade);
+
+        // 6. Retorna o produto atualizado
+        return new ProdutoResponseDTO(
+                produto.getId(),
+                produto.getNome(),
+                produto.getQuantidade(),
+                produto.getPreco(),
+                produto.calcularValorTotalEstoque()
+        );
+
+    }
+
+    @Transactional
+    public ProdutoResponseDTO attPreco(Long id, Double preco) {
+        Produto produto = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado ID: " + id));
+        produto.setPreco(preco);
+        repository.save(produto);
+
+        rabbitTemplate.convertAndSend("estoque.ex", "estoque.rk",
+                "preco Atualizado " + produto.getNome() + ". Total atual: " + preco);
+
+        // 6. Retorna o produto atualizado
+        return new ProdutoResponseDTO(
+                produto.getId(),
+                produto.getNome(),
+                produto.getQuantidade(),
+                produto.getPreco(),
+                produto.calcularValorTotalEstoque()
+        );
+
+    }
+
+    @Transactional
+    public ProdutoResponseDTO attNome(Long id, String nome) {
+        Produto produto = repository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Produto não encontrado ID: " + id));
+
+        produto.setNome(nome);
+        repository.save(produto);
+
+        rabbitTemplate.convertAndSend("estoque.ex", "estoque.rk",
+                "Nome Atualizado" + produto.getNome() + ". Total atual: " + nome);
+
+        // 6. Retorna o produto atualizado
+        return new ProdutoResponseDTO(
+                produto.getId(),
+                produto.getNome(),
+                produto.getQuantidade(),
+                produto.getPreco(),
+                produto.calcularValorTotalEstoque()
+        );
+
     }
 
     //Buscar todos os Produtos
